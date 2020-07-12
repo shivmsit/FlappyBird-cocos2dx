@@ -33,6 +33,7 @@ set(COCOS2DX_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cocos2d)
 set(CMAKE_MODULE_PATH ${COCOS2DX_ROOT_PATH}/cmake/Modules/)
 
 include(CocosBuildSet)
+#include(${COCOS2DX_ROOT_PATH}/prebuilt/CMakeLists.txt)
 add_subdirectory(${COCOS2DX_ROOT_PATH}/prebuilt)
 #add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
 
