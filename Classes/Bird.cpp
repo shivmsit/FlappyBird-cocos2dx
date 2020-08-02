@@ -35,7 +35,9 @@ bool Bird::init()
     //create flap action
     auto flapAnim = Animation::createWithSpriteFrames(animFrames, 1.0f/10);
     auto flapAction = Animate::create(flapAnim);
+    flapAction->retain();
     _idle = RepeatForever::create(Sequence::create(flapAction, DelayTime::create(.2f), NULL));
+    _idle->retain();
 
     _fly = RepeatForever::create(Animate::create(flapAnim));
     _fly->retain();
@@ -44,6 +46,7 @@ bool Bird::init()
     auto moveUp = MoveBy::create(.3f, Vec2(0, 6));
     auto moveDown = MoveBy::create(.2f, Vec2(0, -6));
     _swing = RepeatForever::create(Sequence::create(moveUp, moveDown, NULL));
+    _swing->retain();
 
     return true;
 }
@@ -66,4 +69,4 @@ void Bird::fly()
 }
 
 Bird::Bird() { }
-Bird::~Bird() { _fly->release(); }
+Bird::~Bird() { _fly->release(); _idle->release(); }

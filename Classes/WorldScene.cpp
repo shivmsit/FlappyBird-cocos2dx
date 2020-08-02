@@ -1,5 +1,6 @@
 #include "WorldScene.h"
 #include "ui/CocosGUI.h"
+#include "GameOver.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -35,7 +36,7 @@ bool WorldScene::init()
     if (!Scene::initWithPhysics())
         return false;
 
-    getPhysicsWorld()->setDebugDrawMask(0xffff);
+    //getPhysicsWorld()->setDebugDrawMask(0xffff);
     getPhysicsWorld()->setGravity(Vect(0, -900));
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -66,12 +67,19 @@ bool WorldScene::init()
     addChild(_ground[0], 1);
     addChild(_ground[1], 1);
 
+    _readyLabel = Sprite::createWithSpriteFrameName("label_get_ready.png");
+    _readyLabel->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height*3.0f/4 + origin.y));
+    addChild(_readyLabel);
+
     _instruction = Sprite::createWithSpriteFrameName("instructions.png");
     _instruction->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
     addChild(_instruction);
 
     addPipes();
     addBird();
+
+    _score  = Score::create();
+    addChild(_score);
 
     //Schedule update to be called per frame
     scheduleUpdate();
@@ -86,6 +94,11 @@ bool WorldScene::init()
     auto contactListener = EventListenerPhysicsContact::create();
     contactListener->onContactBegin = CC_CALLBACK_1(WorldScene::onPhysicsContactBegin, this);
     getEventDispatcher()->addEventListenerWithSceneGraphPriority(contactListener, this);
+
+    auto eventListener = EventListenerCustom::create("game_restart", [=](EventCustom* event) {
+        restartGame();
+    });
+    getEventDispatcher()->addEventListenerWithSceneGraphPriority(eventListener, this);
          
     return true;
 }
@@ -119,7 +132,7 @@ void WorldScene::addBird()
 
     auto shape = PhysicsShapeCircle::create(BIRD_RADIUS);
     _bird->setPhysicsBody(createBody(shape, true, false, BIRD_BIT, GROUND_BIT | PIPE_BIT, GROUND_BIT));
-    _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 30, visibleSize.height/2 + origin.y));
+    _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
     _bird->idle();
 
     addChild(_bird);
@@ -141,12 +154,14 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
             _state = GameState::RUNNING;
             _bird->getPhysicsBody()->setGravityEnable(true);
             _instruction->setVisible(false);
+            _readyLabel->setVisible(false);
         case GameState::RUNNING:
             _bird->fly();
             _bird->getPhysicsBody()->setVelocity(Vec2(0, 300));
             _bird->getPhysicsBody()->setAngularVelocity(3);
             break;
     }
+
     return true;
 }
 
@@ -223,4 +238,31 @@ void WorldScene::update(float dt)
 
 void WorldScene::onGameOver()
 {
+    _score->setVisible(false);
+
+    auto gameOver = GameOver::create();
+    addChild(gameOver, 1);
+}
+
+void WorldScene::restartGame()
+{
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    int x = visibleSize.width + PIPE_HORIZONTAL_GAP;
+
+    _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
+    _bird->getPhysicsBody()->setGravityEnable(false);
+    _bird->setRotation(0);
+    _bird->idle();
+
+    for (int i=0; i<PIPE_COUNT; i++) {
+        _pipes[i]->setPosition(Vec2(x, getRandomPipeY()));
+        x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
+    }
+
+    _score->reset();
+    _score->setVisible(true);
+    _instruction->setVisible(true);
+    _readyLabel->setVisible(true);
+    _state = GameState::INIT;
 }

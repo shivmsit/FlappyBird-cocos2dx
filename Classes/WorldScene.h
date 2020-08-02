@@ -5,6 +5,7 @@
 #include "Settings.h"
 #include "Pipes.h"
 #include "Bird.h"
+#include "Score.h"
 
 USING_NS_CC;
 
@@ -31,10 +32,13 @@ private:
     bool onTouchBegan(Touch* touch, Event* event);
     bool onPhysicsContactBegin(const PhysicsContact &contact);
     void onGameOver();
+    void restartGame();
 
 private:
     Sprite* _ground[2];
     Sprite* _instruction;
+    Sprite* _readyLabel;
+    Score* _score;
     Bird* _bird;
     Pipes* _pipes[PIPE_COUNT];
     GameState _state;
