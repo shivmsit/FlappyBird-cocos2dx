@@ -16,6 +16,7 @@
 #define BIRD_BIT                1
 #define GROUND_BIT              2
 #define PIPE_BIT                4
+#define COIN_BIT                8
 
 
 #endif //__SETTINGS_H__

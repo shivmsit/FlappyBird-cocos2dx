@@ -1,23 +1,10 @@
 #include "WorldScene.h"
 #include "ui/CocosGUI.h"
 #include "GameOver.h"
+#include "PhysicsHelper.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
-
-static PhysicsBody* createBody(PhysicsShape* shape, bool dynamic, bool enableGravity, int categoryMask, int contactTestMask, int collisionMask)
-{
-    auto body = PhysicsBody::create();
-    body->addShape(shape);
-    body->setDynamic(dynamic);
-    body->setLinearDamping(0.0f);
-    body->setGravityEnable(enableGravity);
-    body->setCategoryBitmask(categoryMask);
-    body->setContactTestBitmask(contactTestMask);
-    body->setCollisionBitmask(collisionMask);
-
-    return body;
-}
 
 Scene* WorldScene::create()
 {
@@ -112,12 +99,6 @@ void WorldScene::addPipes()
         _pipes[i] = Pipes::create();
         _pipes[i]->setPosition(Vec2(x, getRandomPipeY()));
 
-        auto shape = PhysicsShapeBox::create(_pipes[i]->getTopPipe()->getContentSize());
-        _pipes[i]->getTopPipe()->setPhysicsBody(createBody(shape, false, false, PIPE_BIT, BIRD_BIT, BIRD_BIT));
-
-        shape = PhysicsShapeBox::create(_pipes[i]->getBottomPipe()->getContentSize());
-        _pipes[i]->getBottomPipe()->setPhysicsBody(createBody(shape, false, false, PIPE_BIT, BIRD_BIT, BIRD_BIT));
-
         addChild(_pipes[i]);
         x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
     }
@@ -131,7 +112,7 @@ void WorldScene::addBird()
     _bird = Bird::create();
 
     auto shape = PhysicsShapeCircle::create(BIRD_RADIUS);
-    _bird->setPhysicsBody(createBody(shape, true, false, BIRD_BIT, GROUND_BIT | PIPE_BIT, GROUND_BIT));
+    _bird->setPhysicsBody(createBody(shape, true, false, BIRD_BIT, GROUND_BIT | PIPE_BIT | COIN_BIT, GROUND_BIT));
     _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
     _bird->idle();
 
@@ -167,11 +148,17 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
 
 bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
 {
+
     PhysicsBody* birdBody = contact.getShapeA()->getBody();
     PhysicsBody* otherBody = contact.getShapeB()->getBody();
 
     if (birdBody->getCategoryBitmask() != BIRD_BIT) {
         std::swap(birdBody, otherBody);
+    }
+
+    if (otherBody->getCategoryBitmask() == COIN_BIT) {
+        _score->addScore();
+        return false;
     }
 
     auto body = _bird->getPhysicsBody();
