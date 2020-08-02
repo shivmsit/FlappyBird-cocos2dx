@@ -46,5 +46,19 @@ int Score::getScore()
     return _score;
 }
 
+void Score::updateScore()
+{
+    int topScore = UserDefault::getInstance()->getIntegerForKey("topScore", -1);
+    if (topScore < _score) {
+        UserDefault::getInstance()->setIntegerForKey("topScore", _score);
+        UserDefault::getInstance()->flush();
+    }
+}
+
+int Score::getTopScore()
+{
+    return UserDefault::getInstance()->getIntegerForKey("topScore", 0);
+}
+
 Score::Score() { }
 Score::~Score() { }

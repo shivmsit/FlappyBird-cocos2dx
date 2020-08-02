@@ -13,6 +13,8 @@ public:
     void addScore();
     int getScore();
     void reset();
+    void updateScore();
+    int getTopScore();
 CC_CONSTRUCTOR_ACCESS:
     Score();
     ~Score();

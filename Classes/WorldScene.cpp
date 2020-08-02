@@ -136,6 +136,7 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
             _bird->getPhysicsBody()->setGravityEnable(true);
             _instruction->setVisible(false);
             _readyLabel->setVisible(false);
+            _score->reset();
         case GameState::RUNNING:
             _bird->fly();
             _bird->getPhysicsBody()->setVelocity(Vec2(0, 300));
@@ -148,7 +149,6 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
 
 bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
 {
-
     PhysicsBody* birdBody = contact.getShapeA()->getBody();
     PhysicsBody* otherBody = contact.getShapeB()->getBody();
 
@@ -226,8 +226,10 @@ void WorldScene::update(float dt)
 void WorldScene::onGameOver()
 {
     _score->setVisible(false);
+    _instruction->setVisible(false);
+    _readyLabel->setVisible(false);
 
-    auto gameOver = GameOver::create();
+    auto gameOver = GameOver::create(_score->getScore());
     addChild(gameOver, 1);
 }
 
@@ -247,7 +249,6 @@ void WorldScene::restartGame()
         x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
     }
 
-    _score->reset();
     _score->setVisible(true);
     _instruction->setVisible(true);
     _readyLabel->setVisible(true);
