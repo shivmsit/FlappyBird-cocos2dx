@@ -19,13 +19,17 @@ CC_CONSTRUCTOR_ACCESS:
 private:
     void onAnimationFinished();
     void randomizeSparkle();
+    void scoreCounter(float dt);
 
 private:
     Button* _playButton;
     Button* _scoreButton;
     Sprite* _sparkle;
     Label* _bestScoreLabel;
+    Label* _scoreLabel;
     int _score;
+    int _topScore;
+    int _count;
 };
 
 #endif //__GAME_OVER_H__

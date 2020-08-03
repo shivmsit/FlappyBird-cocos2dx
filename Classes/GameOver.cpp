@@ -22,6 +22,7 @@ bool GameOver::init(int score)
         return false;
 
     _score = score;
+    _count = 0;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -64,13 +65,14 @@ bool GameOver::init(int score)
 
     char scoreStr[32];
     sprintf(scoreStr, "%d", _score);
-    auto scoreLabel = Label::createWithBMFont("scoreFont.fnt", scoreStr);
-    scoreLabel->setPosition(Vec2(180, 66));
-    scorePanel->addChild(scoreLabel, 2);
+    _scoreLabel = Label::createWithBMFont("scoreFont.fnt", "0");
+    _scoreLabel->setPosition(Vec2(180, 66));
+    _scoreLabel->setVisible(false);
+    scorePanel->addChild(_scoreLabel, 2);
 
 
-    int topScore = UserDefault::getInstance()->getIntegerForKey("topScore", 0);
-    sprintf(scoreStr, "%d", topScore);
+    _topScore = UserDefault::getInstance()->getIntegerForKey("topScore", 0);
+    sprintf(scoreStr, "%d", _topScore);
 
     _bestScoreLabel = Label::createWithBMFont("scoreFont.fnt", scoreStr);
     _bestScoreLabel->setPosition(182, 24);
@@ -113,20 +115,34 @@ bool GameOver::init(int score)
     return true;
 }
 
+void GameOver::scoreCounter(float dt)
+{
+    char scoreStr[32];
+    if (_count < _score) {
+        sprintf(scoreStr, "%d", _count);
+        _scoreLabel->setString(scoreStr);
+    } else {
+        unschedule("score_counter");
+    }
+    _count++;
+}
+
 void GameOver::onAnimationFinished()
 {
     _scoreButton->setVisible(true);
     _playButton->setVisible(true);
+    _scoreLabel->setVisible(true);
 
-    int topScore = UserDefault::getInstance()->getIntegerForKey("topScore", 0);
-    if (topScore < _score) {
+    if (_topScore < _score) {
         UserDefault::getInstance()->setIntegerForKey("topScore", _score);
         UserDefault::getInstance()->flush();
 
         char scoreStr[32];
-        sprintf(scoreStr, "%d", topScore);
+        sprintf(scoreStr, "%d", _topScore);
         _bestScoreLabel->setString(scoreStr);
     }
+
+    schedule(CC_CALLBACK_1(GameOver::scoreCounter, this), 0.1f, "score_counter");
 }
 
 void GameOver::randomizeSparkle()
