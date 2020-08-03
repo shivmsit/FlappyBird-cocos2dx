@@ -118,12 +118,12 @@ bool GameOver::init(int score)
 void GameOver::scoreCounter(float dt)
 {
     char scoreStr[32];
-    if (_count < _score) {
-        sprintf(scoreStr, "%d", _count);
-        _scoreLabel->setString(scoreStr);
-    } else {
+    sprintf(scoreStr, "%d", _count);
+    _scoreLabel->setString(scoreStr);
+
+    if (_count == _score)
         unschedule("score_counter");
-    }
+
     _count++;
 }
 
