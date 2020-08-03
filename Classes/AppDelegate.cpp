@@ -27,7 +27,7 @@
 #include "WorldScene.h"
 
 // #define USE_AUDIO_ENGINE 1
-// #define USE_SIMPLE_AUDIO_ENGINE 1
+#define USE_SIMPLE_AUDIO_ENGINE 1
 
 #if USE_AUDIO_ENGINE && USE_SIMPLE_AUDIO_ENGINE
 #error "Don't use AudioEngine and SimpleAudioEngine at the same time. Please just select one in your game!"
@@ -99,6 +99,18 @@ bool AppDelegate::applicationDidFinishLaunching() {
     glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::NO_BORDER);
 
     register_all_packages();
+
+    auto sharedFileUtils = FileUtils::getInstance();
+    std::vector<std::string> searchPaths;
+
+    searchPaths.push_back("audio");
+    sharedFileUtils->setSearchPaths(searchPaths);
+
+    SimpleAudioEngine::getInstance()->preloadEffect("sfx_die.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("sfx_hit.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("sfx_point.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("sfx_swooshing.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("sfx_wing.wav");
 
     // create a scene. it's an autorelease object
     auto scene = WelcomeScene::create();

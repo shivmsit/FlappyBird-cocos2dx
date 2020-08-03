@@ -2,8 +2,10 @@
 #include "ui/CocosGUI.h"
 #include "GameOver.h"
 #include "PhysicsHelper.h"
+#include "audio/include/SimpleAudioEngine.h"
 
 USING_NS_CC;
+using namespace CocosDenshion;
 using namespace cocos2d::ui;
 
 Scene* WorldScene::create()
@@ -138,6 +140,7 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
             _readyLabel->setVisible(false);
             _score->reset();
         case GameState::RUNNING:
+            SimpleAudioEngine::getInstance()->playEffect("sfx_wing.wav");
             _bird->fly();
             _bird->getPhysicsBody()->setVelocity(Vec2(0, 300));
             _bird->getPhysicsBody()->setAngularVelocity(3);
@@ -157,6 +160,7 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
     }
 
     if (otherBody->getCategoryBitmask() == COIN_BIT) {
+        SimpleAudioEngine::getInstance()->playEffect("sfx_point.wav");
         _score->addScore();
         return false;
     }
@@ -164,17 +168,16 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
     auto body = _bird->getPhysicsBody();
     if (otherBody->getCategoryBitmask() == PIPE_BIT) {
         body->setAngularVelocity(-1.5);                     //Let it fall to ground with some angular velocity
+        _state = GameState::HIT;
+        SimpleAudioEngine::getInstance()->playEffect("sfx_hit.wav");
     } else {
         body->setAngularVelocity(0);                        //Bird hit the ground set angular velocity to 0
         body->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
+        _state = GameState::GROUNDED;
+        SimpleAudioEngine::getInstance()->playEffect("sfx_die.wav");
     }
 
     _bird->stop();
-
-    if (_state != GameState::OVER) {
-        _state = GameState::OVER;
-        onGameOver();
-    }
 
     return true;
 }
@@ -184,11 +187,18 @@ void WorldScene::update(float dt)
     auto body = _bird->getPhysicsBody();
 
     if (_state == GameState::OVER) {
+        unscheduleUpdate();
+        return;
+    }
+
+    if (_state == GameState::GROUNDED) {
+        _state = GameState::OVER;
         if (_bird->getRotation() > 30) {
             body->setAngularVelocity(0);
             body->setRotationEnable(false);
             _bird->setRotation(30);
         }
+        onGameOver();
         return;
     }
 
@@ -229,6 +239,10 @@ void WorldScene::onGameOver()
     _instruction->setVisible(false);
     _readyLabel->setVisible(false);
 
+    SimpleAudioEngine::getInstance()->playEffect("sfx_die.wav");
+    _bird->getPhysicsBody()->setGravityEnable(false);
+    _bird->getPhysicsBody()->setVelocity(Vec2::ZERO);
+    _bird->getPhysicsBody()->setAngularVelocity(0);
     auto gameOver = GameOver::create(_score->getScore());
     addChild(gameOver, 1);
 }
@@ -239,8 +253,10 @@ void WorldScene::restartGame()
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
     int x = visibleSize.width + PIPE_HORIZONTAL_GAP;
 
+    _score->reset();
     _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
     _bird->getPhysicsBody()->setGravityEnable(false);
+    _bird->getPhysicsBody()->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
     _bird->setRotation(0);
     _bird->idle();
 
@@ -253,4 +269,5 @@ void WorldScene::restartGame()
     _instruction->setVisible(true);
     _readyLabel->setVisible(true);
     _state = GameState::INIT;
+    scheduleUpdate();
 }

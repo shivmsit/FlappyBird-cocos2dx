@@ -1,6 +1,8 @@
 #include "GameOver.h"
+#include "audio/include/SimpleAudioEngine.h"
 
 using namespace cocos2d::ui;
+using namespace CocosDenshion;
 
 GameOver* GameOver::create(int score)
 {
@@ -38,6 +40,7 @@ bool GameOver::init(int score)
     _playButton->setVisible(false);
     _playButton->setPosition(Vec2(visibleSize.width/2 - _playButton->getContentSize().width/2 - 8 + origin.x, visibleSize.height/3 + origin.y));
     _playButton->addClickEventListener([=](Ref* sender) {
+        SimpleAudioEngine::getInstance()->playEffect("sfx_swooshing.wav");
         EventCustom event("game_restart");
         getEventDispatcher()->dispatchEvent(&event);
         this->removeFromParentAndCleanup(true);

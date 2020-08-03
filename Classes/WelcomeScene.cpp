@@ -1,8 +1,10 @@
 #include "WelcomeScene.h"
 #include "ui/CocosGUI.h"
 #include "WorldScene.h"
+#include "audio/include/SimpleAudioEngine.h"
 
 USING_NS_CC;
+using namespace CocosDenshion;
 using namespace cocos2d::ui;
 
 Scene* WelcomeScene::create()
@@ -60,6 +62,7 @@ bool WelcomeScene::init()
     play->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/3 + origin.y));
 
     play->addClickEventListener([](Ref* sender) {
+        SimpleAudioEngine::getInstance()->playEffect("sfx_swooshing.wav");
         TransitionScene *transition = TransitionFade::create(0.75f, WorldScene::create());
         Director::getInstance()->replaceScene(transition);
     });

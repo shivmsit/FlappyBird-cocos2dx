@@ -13,6 +13,8 @@ enum GameState
 {
     INIT = 0,
     RUNNING,
+    HIT,
+    GROUNDED,
     PAUSE,
     OVER
 };
