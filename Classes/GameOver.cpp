@@ -56,8 +56,9 @@ bool GameOver::init(int score)
     auto scorePanel = Sprite::createWithSpriteFrameName("panel_score.png");
     Vec2 endPos(visibleSize.width/2 + origin.x, visibleSize.height*3.5/6 + origin.y);
     Vec2 startPos(visibleSize.width/2 + origin.x, -scorePanel->getContentSize().height/2 + origin.y);
-    auto moveTo = MoveTo::create(0.3f, endPos);
-    auto seq = Sequence::create(moveTo, CallFunc::create(CC_CALLBACK_0(GameOver::onAnimationFinished, this)), nullptr);
+    auto moveTo = MoveTo::create(0.5f, endPos);
+    auto actionDone = CallFunc::create(CC_CALLBACK_0(GameOver::onAnimationFinished, this));
+    auto seq = Sequence::createWithTwoActions(EaseExponentialOut::create(moveTo), actionDone);
     scorePanel->runAction(seq);
     scorePanel->setPosition(startPos);
 
