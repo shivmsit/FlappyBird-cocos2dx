@@ -159,6 +159,9 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
         std::swap(birdBody, otherBody);
     }
 
+    if (_state == GameState::GROUNDED || _state == GameState::OVER)
+        return false;
+
     if (otherBody->getCategoryBitmask() == COIN_BIT) {
         SimpleAudioEngine::getInstance()->playEffect("sfx_point.wav");
         _score->addScore();
@@ -168,8 +171,9 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
     auto body = _bird->getPhysicsBody();
     if (otherBody->getCategoryBitmask() == PIPE_BIT) {
         body->setAngularVelocity(-1.5);                     //Let it fall to ground with some angular velocity
+        if (_state != GameState::HIT)
+            SimpleAudioEngine::getInstance()->playEffect("sfx_hit.wav");
         _state = GameState::HIT;
-        SimpleAudioEngine::getInstance()->playEffect("sfx_hit.wav");
     } else {
         body->setAngularVelocity(0);                        //Bird hit the ground set angular velocity to 0
         body->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
