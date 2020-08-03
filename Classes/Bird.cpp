@@ -1,5 +1,7 @@
 #include "Bird.h"
 
+int Bird::_birdId = -1;
+
 Bird* Bird::create()
 {
     Bird* bird = new (std::nothrow) Bird();
@@ -20,7 +22,7 @@ bool Bird::init()
     auto spritecache = SpriteFrameCache::getInstance();
 
     const char* type[] = { "blue", "orange", "red" };
-    int color = cocos2d::RandomHelper::random_int(0, 2);
+    int color = _birdId != -1? _birdId : cocos2d::RandomHelper::random_int(0, 2);
     char birdname[32];
     Vector<SpriteFrame*> animFrames(3);
     for(int i=0; i<3; i++) {
@@ -28,6 +30,8 @@ bool Bird::init()
         auto frame = spritecache->getSpriteFrameByName(birdname);
         animFrames.pushBack(frame);
     }
+
+    _birdId = color;
 
     if (!initWithSpriteFrame(animFrames.front()))
         return false;

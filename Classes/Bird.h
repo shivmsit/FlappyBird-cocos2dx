@@ -11,6 +11,7 @@ private:
     Action* _idle;
     Action* _swing;
     Action* _fly;
+    static int _birdId;
 
 public:
     static Bird* create();
