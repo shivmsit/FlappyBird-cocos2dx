@@ -12,10 +12,12 @@ public:
     virtual bool init();
     Sprite* getTopPipe() { return _top; }
     Sprite* getBottomPipe() { return _bottom; }
+    void enableCoinPhysics(bool enable);
 
 private:
     Sprite* _top;
     Sprite* _bottom;
+    PhysicsBody* _coin;
 
 CC_CONSTRUCTOR_ACCESS:
     Pipes();

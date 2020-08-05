@@ -45,18 +45,6 @@ bool WorldScene::init()
     _ground[0]->setAnchorPoint(Point::ZERO);
     _ground[1]->setAnchorPoint(Point::ZERO);
 
-    /*
-     * Physics edge for ground
-     */
-    auto node = Node::create();
-    int groundHeight = _ground[0]->getContentSize().height;
-    auto edgeSegment = PhysicsShapeEdgeSegment::create(Vec2(0, groundHeight), Vec2(visibleSize.width, groundHeight));
-    auto body = createBody(edgeSegment, false, false, GROUND_BIT, BIRD_BIT, BIRD_BIT);
-
-    node->setPhysicsBody(body);
-    addChild(node);
-
-
     _ground[0]->setPosition(Point::ZERO);
     _ground[1]->setPosition(Vec2(_ground[0]->getContentSize().width, 0));
 
@@ -76,6 +64,19 @@ bool WorldScene::init()
 
     _score  = Score::create();
     addChild(_score);
+
+    /*
+     * Physics for ground, setAcnchor for node does not work
+     */
+    auto node = Node::create();
+    int groundHeight = _ground[0]->getContentSize().height;
+    //auto edgeSegment = PhysicsShapeEdgeSegment::create(Vec2(0, groundHeight), Vec2(visibleSize.width, groundHeight));
+    auto shape = PhysicsShapeBox::create(Size(visibleSize.width, groundHeight));
+    auto body = createBody(shape, false, false, GROUND_BIT, BIRD_BIT, BIRD_BIT);
+
+    node->setPhysicsBody(body);
+    node->setPosition(Vec2(visibleSize.width/2, groundHeight/2));
+    addChild(node);
 
     //Schedule update to be called per frame
     scheduleUpdate();
@@ -190,6 +191,11 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
         _score->addScore();
 
         /*
+         * Disable this body so same coin cannot be collected again.
+         */
+        otherBody->setEnabled(false);
+
+        /*
          * We dont want this collision to be processed by world, as we just need to add up to the coin.
          */
         return false;
@@ -262,6 +268,7 @@ void WorldScene::update(float dt)
 
         if (_pipes[i]->getPositionX() < -_pipes[i]->getTopPipe()->getContentSize().width - 3) {
             _pipes[i]->setPosition(Vec2(_pipes[i]->getPositionX() + PIPE_COUNT*(_pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP), getRandomPipeY()));
+            _pipes[i]->enableCoinPhysics(true);
         }
     }
 }

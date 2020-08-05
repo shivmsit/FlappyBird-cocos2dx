@@ -44,14 +44,23 @@ bool Pipes::init()
     auto node = Node::create();
 
     auto edgeSegment = PhysicsShapeEdgeSegment::create(Vec2(0, PIPE_VERTICAL_GAP/2.0f), Vec2(0, -PIPE_VERTICAL_GAP/2.0f));
-    auto body = createBody(edgeSegment, false, false, COIN_BIT, BIRD_BIT, BIRD_BIT);
+    _coin = createBody(edgeSegment, false, false, COIN_BIT, BIRD_BIT, BIRD_BIT);
 
-    //node->addComponent(body);
-    node->setPhysicsBody(body);
+    node->setPhysicsBody(_coin);
 
     addChild(node);
 
     return true;
+}
+
+/*
+ * Set whether physics for coin colleciton is enabled,this is neccesory to
+ * disable it once a coin is collected otherwise same coin can be collected 
+ * multiple time due to physics bounces.
+ */
+void Pipes::enableCoinPhysics(bool enable)
+{
+    _coin->setEnabled(enable);
 }
 
 Pipes::Pipes() { }
