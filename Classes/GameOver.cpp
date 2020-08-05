@@ -122,8 +122,14 @@ void GameOver::scoreCounter(float dt)
     sprintf(scoreStr, "%d", _count);
     _scoreLabel->setString(scoreStr);
 
-    if (_count == _score)
+    if (_count == _score) {
+        if (_score > _topScore) {
+            char scoreStr[32];
+            sprintf(scoreStr, "%d", _score);
+            _bestScoreLabel->setString(scoreStr);
+        }
         unschedule("score_counter");
+    }
 
     _count++;
 }
