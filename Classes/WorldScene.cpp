@@ -45,10 +45,17 @@ bool WorldScene::init()
     _ground[0]->setAnchorPoint(Point::ZERO);
     _ground[1]->setAnchorPoint(Point::ZERO);
 
-    _ground[0]->setPhysicsBody(createBody(PhysicsShapeBox::create(_ground[0]->getContentSize()),
-                                          false, false, GROUND_BIT, BIRD_BIT, BIRD_BIT));
-    _ground[1]->setPhysicsBody(createBody(PhysicsShapeBox::create(_ground[1]->getContentSize()),
-                                          false, false, GROUND_BIT, BIRD_BIT, BIRD_BIT));
+    /*
+     * Physics edge for ground
+     */
+    auto node = Node::create();
+    int groundHeight = _ground[0]->getContentSize().height;
+    auto edgeSegment = PhysicsShapeEdgeSegment::create(Vec2(0, groundHeight), Vec2(visibleSize.width, groundHeight));
+    auto body = createBody(edgeSegment, false, false, GROUND_BIT, BIRD_BIT, BIRD_BIT);
+
+    node->setPhysicsBody(body);
+    addChild(node);
+
 
     _ground[0]->setPosition(Point::ZERO);
     _ground[1]->setPosition(Vec2(_ground[0]->getContentSize().width, 0));
@@ -135,6 +142,7 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
     switch(_state) {
         case GameState::INIT:
             _state = GameState::RUNNING;
+            _bird->getPhysicsBody()->setEnabled(true);
             _bird->getPhysicsBody()->setGravityEnable(true);
             _instruction->setVisible(false);
             _readyLabel->setVisible(false);
@@ -150,8 +158,26 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
     return true;
 }
 
+/*
+ * Returning false from this callback let ignore this collision by the physics world
+ * or return true to process it normally
+ */
 bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
 {
+#if BIRD_BODY_NOT_REMOVED_FROM_WORLD
+    if (_state == GameState::OVER) {
+        /*
+         * If we don't return true from here physics body ignore the collision
+         * which may result in bird passing though the ground even after onGameOver
+         * best solution would be to remove the physics body.
+         *
+         * Even with this bird has interaction with grond even after onGameOver, so we disable bird
+         * physics body once we are in gameover state.
+         */
+        return true;
+    }
+#endif
+
     PhysicsBody* birdBody = contact.getShapeA()->getBody();
     PhysicsBody* otherBody = contact.getShapeB()->getBody();
 
@@ -159,12 +185,13 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
         std::swap(birdBody, otherBody);
     }
 
-    if (_state == GameState::GROUNDED || _state == GameState::OVER)
-        return false;
-
     if (otherBody->getCategoryBitmask() == COIN_BIT) {
         SimpleAudioEngine::getInstance()->playEffect("sfx_point.wav");
         _score->addScore();
+
+        /*
+         * We dont want this collision to be processed by world, as we just need to add up to the coin.
+         */
         return false;
     }
 
@@ -177,8 +204,12 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
     } else {
         body->setAngularVelocity(0);                        //Bird hit the ground set angular velocity to 0
         body->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
-        _state = GameState::GROUNDED;
-        SimpleAudioEngine::getInstance()->playEffect("sfx_die.wav");
+        _state = GameState::OVER;
+
+        /*
+         * Disable physics simulaiton for this body
+         */
+        body->setEnabled(false);
     }
 
     _bird->stop();
@@ -188,23 +219,19 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
 
 void WorldScene::update(float dt)
 {
-    auto body = _bird->getPhysicsBody();
 
     if (_state == GameState::OVER) {
+        if (_bird->getRotation() > 30) {
+            _bird->setRotation(30);
+        }
+        onGameOver();
         unscheduleUpdate();
         return;
     }
 
-    if (_state == GameState::GROUNDED) {
-        _state = GameState::OVER;
-        if (_bird->getRotation() > 30) {
-            body->setAngularVelocity(0);
-            body->setRotationEnable(false);
-            _bird->setRotation(30);
-        }
-        onGameOver();
+    if (_state != GameState::RUNNING && _state != GameState::INIT)
         return;
-    }
+
 
     float groundWidth = _ground[0]->getContentSize().width;
     for (int i=0; i<2; i++) {
@@ -217,15 +244,17 @@ void WorldScene::update(float dt)
     if (_state != GameState::RUNNING)
         return;
 
-    if (_bird->getRotation() < -30) {
-        body->setAngularVelocity(0);
-        body->setRotationEnable(false);
-        _bird->setRotation(-30);
-    }
+    auto body = _bird->getPhysicsBody();
+    if (body) {
+        if (_bird->getRotation() < -30) {
+            body->setAngularVelocity(0);
+            _bird->setRotation(-30);
+        }
 
-    if (body->getVelocity().y < 0) {
-        body->setAngularVelocity(-1.5);
-        _bird->stop();
+        if (body->getVelocity().y < 0) {
+            body->setAngularVelocity(-1.5);
+            _bird->stop();
+        }
     }
 
     for (int i=0; i<PIPE_COUNT; i++) {
@@ -244,9 +273,6 @@ void WorldScene::onGameOver()
     _readyLabel->setVisible(false);
 
     SimpleAudioEngine::getInstance()->playEffect("sfx_die.wav");
-    _bird->getPhysicsBody()->setGravityEnable(false);
-    _bird->getPhysicsBody()->setVelocity(Vec2::ZERO);
-    _bird->getPhysicsBody()->setAngularVelocity(0);
     auto gameOver = GameOver::create(_score->getScore());
     addChild(gameOver, 1);
 }
