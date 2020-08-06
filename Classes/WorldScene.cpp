@@ -109,6 +109,11 @@ void WorldScene::addPipes()
         _pipes[i] = Pipes::create();
         _pipes[i]->setPosition(Vec2(x, getRandomPipeY()));
 
+        /*
+         * Tag to identify the pipe so we can disable it in physics whenever needed.
+         */
+        _pipes[i]->setTag(i);
+
         addChild(_pipes[i]);
         x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
     }
@@ -207,13 +212,21 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
         if (_state != GameState::HIT)
             SimpleAudioEngine::getInstance()->playEffect("sfx_hit.wav");
         _state = GameState::HIT;
+
+        /*
+         * Disable physics for this pipe so it wont create more contact callbacks
+         */
+        int tag = otherBody->getTag();
+        if (tag >=0 && tag < PIPE_COUNT) {
+            _pipes[tag]->setPhysicsEnabled(false);
+        }
     } else {
         body->setAngularVelocity(0);                        //Bird hit the ground set angular velocity to 0
         body->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
         _state = GameState::OVER;
 
         /*
-         * Disable physics simulaiton for this body
+         * Game is over, disable physics simulaiton for this bird
          */
         body->setEnabled(false);
     }
@@ -268,7 +281,7 @@ void WorldScene::update(float dt)
 
         if (_pipes[i]->getPositionX() < -_pipes[i]->getTopPipe()->getContentSize().width - 3) {
             _pipes[i]->setPosition(Vec2(_pipes[i]->getPositionX() + PIPE_COUNT*(_pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP), getRandomPipeY()));
-            _pipes[i]->enableCoinPhysics(true);
+            _pipes[i]->setCoinPhysicsEnabled(true);
         }
     }
 }
@@ -300,6 +313,7 @@ void WorldScene::restartGame()
     for (int i=0; i<PIPE_COUNT; i++) {
         _pipes[i]->setPosition(Vec2(x, getRandomPipeY()));
         x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
+        _pipes[i]->setPhysicsEnabled(true);
     }
 
     _score->setVisible(true);

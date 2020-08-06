@@ -54,13 +54,26 @@ bool Pipes::init()
 }
 
 /*
- * Set whether physics for coin colleciton is enabled,this is neccesory to
+ * Set whether physics for coin colleciton is enabled, this is neccesory to
  * disable it once a coin is collected otherwise same coin can be collected 
  * multiple time due to physics bounces.
  */
-void Pipes::enableCoinPhysics(bool enable)
+void Pipes::setCoinPhysicsEnabled(bool enable)
 {
     _coin->setEnabled(enable);
+}
+
+void Pipes::setPhysicsEnabled(bool enable)
+{
+    _top->getPhysicsBody()->setEnabled(enable);
+    _bottom->getPhysicsBody()->setEnabled(enable);
+    _coin->setEnabled(enable);
+}
+
+void Pipes::setTag(int tag)
+{
+    _top->getPhysicsBody()->setTag(tag);
+    _bottom->getPhysicsBody()->setTag(tag);
 }
 
 Pipes::Pipes() { }

@@ -12,7 +12,9 @@ public:
     virtual bool init();
     Sprite* getTopPipe() { return _top; }
     Sprite* getBottomPipe() { return _bottom; }
-    void enableCoinPhysics(bool enable);
+    void setCoinPhysicsEnabled(bool enable);
+    void setPhysicsEnabled(bool enable);
+    void setTag(int tag);
 
 private:
     Sprite* _top;
