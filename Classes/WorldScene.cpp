@@ -153,6 +153,7 @@ int WorldScene::getRandomPipeY()
 
 bool WorldScene::onTouchBegan(Touch* touch, Event* event)
 {
+    auto visibleSize = Director::getInstance()->getVisibleSize();
     switch(_state) {
         case GameState::INIT:
             _state = GameState::RUNNING;
@@ -164,7 +165,13 @@ bool WorldScene::onTouchBegan(Touch* touch, Event* event)
         case GameState::RUNNING:
             SimpleAudioEngine::getInstance()->playEffect("sfx_wing.wav");
             _bird->fly();
-            _bird->getPhysicsBody()->setVelocity(Vec2(0, 300));
+
+            /*
+             * Dont let bird fly beyond a height otherwise bird could fly above the pipes
+             */
+            if (_bird->getPositionY() < visibleSize.height + 70)
+                _bird->getPhysicsBody()->setVelocity(Vec2(0, 300));
+
             _bird->getPhysicsBody()->setAngularVelocity(3);
             break;
     }
