@@ -2,6 +2,7 @@
 #include "ui/CocosGUI.h"
 #include "GameOver.h"
 #include "PhysicsHelper.h"
+#include "Shake.h"
 #include "audio/include/SimpleAudioEngine.h"
 
 USING_NS_CC;
@@ -38,6 +39,13 @@ bool WorldScene::init()
     // add the background as a child to this layer
     addChild(background, 0);
 
+    /*
+     * A node hold game world other than background
+     * so that shake can work on this
+     */
+    _gameNode = Node::create();
+    addChild(_gameNode);
+
     //Add ground
     _ground[0] = Sprite::createWithSpriteFrameName("ground.png");
     _ground[1] = Sprite::createWithSpriteFrameName("ground.png");
@@ -48,22 +56,22 @@ bool WorldScene::init()
     _ground[0]->setPosition(Point::ZERO);
     _ground[1]->setPosition(Vec2(_ground[0]->getContentSize().width, 0));
 
-    addChild(_ground[0], 1);
-    addChild(_ground[1], 1);
+    _gameNode->addChild(_ground[0], 1);
+    _gameNode->addChild(_ground[1], 1);
 
     _readyLabel = Sprite::createWithSpriteFrameName("label_get_ready.png");
     _readyLabel->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height*3.0f/4 + origin.y));
-    addChild(_readyLabel);
+    _gameNode->addChild(_readyLabel);
 
     _instruction = Sprite::createWithSpriteFrameName("instructions.png");
     _instruction->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
-    addChild(_instruction);
+    _gameNode->addChild(_instruction);
 
     addPipes();
     addBird();
 
     _score  = Score::create();
-    addChild(_score);
+    _gameNode->addChild(_score);
 
     /*
      * Physics for ground, setAcnchor for node does not work
@@ -76,7 +84,7 @@ bool WorldScene::init()
 
     node->setPhysicsBody(body);
     node->setPosition(Vec2(visibleSize.width/2, groundHeight/2));
-    addChild(node);
+    _gameNode->addChild(node);
 
     //Schedule update to be called per frame
     scheduleUpdate();
@@ -114,7 +122,7 @@ void WorldScene::addPipes()
          */
         _pipes[i]->setTag(i);
 
-        addChild(_pipes[i]);
+        _gameNode->addChild(_pipes[i]);
         x = x + _pipes[i]->getTopPipe()->getContentSize().width + PIPE_HORIZONTAL_GAP;
     }
 }
@@ -131,7 +139,7 @@ void WorldScene::addBird()
     _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
     _bird->idle();
 
-    addChild(_bird);
+    _gameNode->addChild(_bird);
 }
 
 int WorldScene::getRandomPipeY()
@@ -140,7 +148,7 @@ int WorldScene::getRandomPipeY()
     int startY = _ground[0]->getContentSize().height + PIPE_VERTICAL_GAP/2.0f + PIPE_BOTTOM_MARGIN;
     int endY = visibleSize.height - PIPE_VERTICAL_GAP/2.0f - PIPE_TOP_MARGIN;
 
-    return  cocos2d::RandomHelper::random_int(startY, endY);
+    return cocos2d::RandomHelper::random_int(startY, endY);
 }
 
 bool WorldScene::onTouchBegan(Touch* touch, Event* event)
@@ -209,8 +217,10 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
     auto body = _bird->getPhysicsBody();
     if (otherBody->getCategoryBitmask() == PIPE_BIT) {
         body->setAngularVelocity(-1.5);                     //Let it fall to ground with some angular velocity
-        if (_state != GameState::HIT)
+        if (_state != GameState::HIT) {
+            doShake();
             SimpleAudioEngine::getInstance()->playEffect("sfx_hit.wav");
+        }
         _state = GameState::HIT;
 
         /*
@@ -230,6 +240,7 @@ bool WorldScene::onPhysicsContactBegin(const PhysicsContact &contact)
          */
         body->setEnabled(false);
     }
+
 
     _bird->stop();
 
@@ -291,6 +302,7 @@ void WorldScene::onGameOver()
     _score->setVisible(false);
     _instruction->setVisible(false);
     _readyLabel->setVisible(false);
+    doShake();
 
     SimpleAudioEngine::getInstance()->playEffect("sfx_die.wav");
     auto gameOver = GameOver::create(_score->getScore());
@@ -303,10 +315,9 @@ void WorldScene::restartGame()
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
     int x = visibleSize.width + PIPE_HORIZONTAL_GAP;
 
-    _score->reset();
     _bird->setPosition(Vec2(visibleSize.width/2 + origin.x - 50, visibleSize.height/2 + origin.y));
     _bird->getPhysicsBody()->setGravityEnable(false);
-    _bird->getPhysicsBody()->setVelocity(Vec2::ZERO);                      //Bird hit the gorund set zero velocity
+    _bird->getPhysicsBody()->setVelocity(Vec2::ZERO);
     _bird->setRotation(0);
     _bird->idle();
 
@@ -316,9 +327,17 @@ void WorldScene::restartGame()
         _pipes[i]->setPhysicsEnabled(true);
     }
 
+    _score->reset();
     _score->setVisible(true);
     _instruction->setVisible(true);
     _readyLabel->setVisible(true);
     _state = GameState::INIT;
+
     scheduleUpdate();
+}
+
+void WorldScene::doShake()
+{
+    stopAllActions();
+    _gameNode->runAction(Shake::create(.2f, Vec2(3, 3)));
 }

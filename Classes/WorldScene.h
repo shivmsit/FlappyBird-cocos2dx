@@ -34,6 +34,7 @@ private:
     bool onPhysicsContactBegin(const PhysicsContact &contact);
     void onGameOver();
     void restartGame();
+    void doShake();
 
 private:
     Sprite* _ground[2];
@@ -43,6 +44,7 @@ private:
     Bird* _bird;
     Pipes* _pipes[PIPE_COUNT];
     GameState _state;
+    Node* _gameNode;
     EventListenerTouchOneByOne * _touchOneByOneListenr;
 };
 
